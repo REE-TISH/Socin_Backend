@@ -46,7 +46,6 @@ def get_ai_response(request,novel_id):
         user_query = request.GET.get('user_query') # User prompt
         chapter_number = novel.novel_chapter.all().count() # total number of chapters belong to this novel
         if not user_request_eligible(user):
-            yield f"data: ERROR: Limit reached\n\n"
             return JsonResponse({"error":"You have reached your daily limit for chapter creation requests. Please try again later."},status=400)
         enhanced_prompt = user_query
         if is_Premium(user):
