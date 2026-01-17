@@ -13,7 +13,7 @@ RAZORPAY_KEY = config('RAZORPAY_API_KEY')
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = "django-insecure-#degin*w7(wi4fno6_g4sr+56$t0fc!lrhwal8v_nbzr&peei#"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
