@@ -11,13 +11,11 @@ from django.http import HttpResponse,JsonResponse
 from Novel_Content.views import is_Premium
 from .models import ChapterBeingCreated
 from Custom_user.helpers import increment_user_request_count,user_request_eligible
+from decouple import config
 import time
 import json
 # Create your views here.
-GEMINI_API_KEY = "AIzaSyBiCvI3X7qWqexUy-6yvZR1W65HxsMgwf8"
-GEMINI_API_KEY2 = 'AIzaSyDwK2LHcA_twwUdmJGaMTpMIuLvbgWIAG0'
-GEMINI_API_KEY3 = 'AIzaSyADfCCrhhU4NOAu-Ucw2zOBW8DG9FBA7Dk'
-GEMINI_API_KEY4 = 'AIzaSyC4YAV_-_dKAvsjPvpoPuu3tKANUthzre0'
+GEMINI_API_KEY = config("GEMINI_API_KEY8")
 
 class Content_and_Summary(BaseModel):
     """A data structure for storing content and its summary."""
@@ -25,7 +23,7 @@ class Content_and_Summary(BaseModel):
     summary: str = Field(description="Just give the main points so that you could understand these later or even some keyword for you to understand as you have to read these later without reaching the context window limit")
     ultra_short_summary:str = Field(description="this is the ultra short summary that will be stored for keeping the context of the full story")
 
-client = genai.Client(api_key=GEMINI_API_KEY4+'fda')
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 arr = ['message_1','message_2','message_3','message_4','__DONE__']
 
