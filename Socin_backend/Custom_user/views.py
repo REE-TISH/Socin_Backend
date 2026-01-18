@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from decouple import config
 from django.conf import settings
-from .helpers import generate_unique_user_id
+from .helpers import generate_unique_user_id,get_public_id_from_url,delete_image_by_url
 from .serializers import CustomUserCreation_Serializer,UserProfileData_Serializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import status
@@ -93,6 +93,10 @@ def edit_user_info_api(request):
 def change_user_avatar_API_VIEW(request):
     try:
         user = request.user
+        if user.avatar:
+            public_id = get_public_id_from_url(user.avatar)
+            if public_id:
+                delete_image_by_url(public_id)
         avatar = request.data['avatar']
         user.avatar = avatar
         user.save()
