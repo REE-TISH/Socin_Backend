@@ -77,7 +77,7 @@ def get_your_profile_data_API_VIEW(request,*args,**kwargs):
 def edit_user_info_api(request):
     user = request.user
     data = request.data
-    if (list(data.keys()) != ['name', 'bio']):
+    if (list(data.keys()) != ['username', 'bio']):
         return Response(status=status.HTTP_400_BAD_REQUEST)
     try:
         user.username = data['username']
