@@ -71,7 +71,7 @@ def get_your_profile_data_API_VIEW(request,*args,**kwargs):
     return Response(serializer.data,status=status.HTTP_200_OK)
 
 
-# Api VIEW TO EDIT USER PROFILE
+# Api VIEW TO EDIT USER PROFILE (bio , username)
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def edit_user_info_api(request):
@@ -87,6 +87,18 @@ def edit_user_info_api(request):
         return Response({'error':'data provided not correct'},status=status.HTTP_400_BAD_REQUEST)
     return Response(status=status.HTTP_201_CREATED)
 
+# EDIT USER AVATAR API VIEW
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def change_user_avatar_API_VIEW(request):
+    try:
+        user = request.user
+        avatar = request.data['avatar']
+        user.avatar = avatar
+        user.save()
+        return Response(status=status.HTTP_200_OK)
+    except:
+        return Response({'error':'data provided not correct'},status=status.HTTP_400_BAD_REQUEST)
 
 # SET PASSWORD OR CHANGE PASSWORD API VIEW
 @api_view(['PUT'])

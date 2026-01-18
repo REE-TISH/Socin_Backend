@@ -13,7 +13,9 @@ urlpatterns = [
     path('delete-account/',views.delete_account_API_VIEW,name="delete_user"),
     path('user-profile/',views.get_your_profile_data_API_VIEW,name="user_profile"),
     path('edit-profile/',views.edit_user_info_api,name="edit_profile"),
+    path('edit-avatar/',views.change_user_avatar_API_VIEW,name="change_avatar"),
                   # JWT Authentication
     path('token/',TokenObtainPairView.as_view(),name="get_token"), 
-    path('token/refresh/',TokenRefreshView.as_view(),name="refresh_token")
+    path('token/refresh/',TokenRefreshView.as_view(),name="refresh_token"),
+    
 ]
