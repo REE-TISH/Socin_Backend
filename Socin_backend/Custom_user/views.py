@@ -13,7 +13,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view,permission_classes
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.hashers import check_password
-
+from razorpay_setup.services import delete_user_subscription
 
 User = get_user_model()
 
@@ -93,6 +93,7 @@ def edit_user_info_api(request):
 def change_user_avatar_API_VIEW(request):
     try:
         user = request.user
+        # delete the previous avatar if user have one from the cloudinary media
         if user.avatar:
             public_id = get_public_id_from_url(user.avatar)
             if public_id:
@@ -125,5 +126,8 @@ def change_password_API_VIEW(request):
 @permission_classes([IsAuthenticated])
 def delete_account_API_VIEW(request):
     user = request.user
+    if user.is_premium:
+        sub_id = user.subscription.first().subscription_id # User Sub Id
+        delete_user_subscription(sub_id)
     user.delete()
     return Response(status=status.HTTP_200_OK)

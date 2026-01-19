@@ -48,7 +48,7 @@ class SubscriptionPlan(models.Model):
 
 # Subscription Model : contains the information about the user who have subscribed
 class Usersubscription(models.Model):
-    user = models.ForeignKey(User, on_delete=models.PROTECT) 
+    user = models.ForeignKey(User, on_delete=models.SET_NULL,blank=True,null=True,related_name="subscription") 
     subscription_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
     plan_id = models.CharField(max_length=100, null=True, blank=True)
     start_at = models.IntegerField(null=True, blank=True)
@@ -56,7 +56,7 @@ class Usersubscription(models.Model):
     status = models.CharField(max_length=50, blank=True)
     # payment_success = models.BooleanField(default=False)
     def save(self, *args, **kwargs):
-        if not self.subscription_id:
+        if not self.subscription_id: # If user doesn't have a subscription id
             response = client.subscription.create({
                 "plan_id": self.plan_id,
                 "customer_notify": 1,
@@ -72,4 +72,4 @@ class Usersubscription(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.user.username} - {self.status}"
+        return f"{self.user} - {self.status}"

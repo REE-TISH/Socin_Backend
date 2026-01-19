@@ -4,7 +4,7 @@ from .models import CustomNovelUser_Model, UserDailyUsage_Model
 
 class CustomUserAdmin(UserAdmin):
     model = CustomNovelUser_Model
-    list_display = ['username', 'email',]
+    list_display = ['username', 'email','is_premium']
 
     fieldsets = UserAdmin.fieldsets + (
         ("Custom Fields", {

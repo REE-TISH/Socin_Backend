@@ -2,6 +2,7 @@
 from django.contrib.auth import get_user_model
 from subscriptions.models import SubscriptionPlan, Usersubscription
 from django.contrib.auth.models import Group
+from .utils import client
 
 # Activates user subscription
 def activate_subscription(user, plan_id):
@@ -18,6 +19,13 @@ def downgrade_to_free(user):
     user.groups.add(group)
     user.save()
 
-# Check if the user has paid the money but didn't get the subscription activated
-# def check_and_activate_subscription(user):
-#     usersubscription = Usersubscription.objects.filter(user=user, payment_success=True, status='active')
+# If user deleted it account then end it subscription
+def delete_user_subscription(sub_id):
+    options = {
+        "cancel_at_cycle_end":0
+    }
+    try:
+        response = client.subscription.cancel(sub_id, options)
+        print(response)
+    except Exception as e:
+        print(e)
