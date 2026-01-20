@@ -75,14 +75,17 @@ def handle_payment_failed(event):
 def handle_subscription_cancelled(event):
     sub_id = event["payload"]["subscription"]["entity"]["id"]
 
-    subscription = Usersubscription.objects.get(
-        subscription_id=sub_id
-    )
+    try:
+        subscription = Usersubscription.objects.get(
+            subscription_id=sub_id
+        )
 
-    subscription.status = "cancelled"
-    subscription.save()
+        subscription.status = "cancelled"
+        subscription.save()
 
-    downgrade_to_free(subscription.user)
+        downgrade_to_free(subscription.user)
+    except Exception as e:
+        print(e)
 
 
 # Delete User Subscription

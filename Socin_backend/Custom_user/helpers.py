@@ -10,7 +10,7 @@ User = get_user_model()
 def could_user_make_request(user):
     if user.is_premium and user.daily_usage.chapter_creation_requests_made < 20:
         return True  # Premium users can make 20 requests per day
-    elif not user.is_premium and user.daily_usage.chapter_creation_requests_made < 5:
+    elif not user.is_premium and user.daily_usage.chapter_creation_requests_made < 3:
         return True  # Free users can make 5 requests per day
     else:
         return False  # User has exceeded their daily request limit

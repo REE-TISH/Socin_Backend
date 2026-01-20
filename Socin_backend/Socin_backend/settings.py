@@ -85,7 +85,10 @@ SIMPLE_JWT = {
 
 # Allowed request origins 
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  #  for a local frontend development server
+    "https://socin.vercel.app",
+]
 
 ROOT_URLCONF = 'Socin_backend.urls'
 

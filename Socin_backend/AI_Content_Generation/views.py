@@ -9,13 +9,14 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view,permission_classes
 from django.http import HttpResponse,JsonResponse
 from Novel_Content.views import is_Premium
+from .helpers import EnhanceUserPrompt
 from .models import ChapterBeingCreated
 from Custom_user.helpers import increment_user_request_count,user_request_eligible
 from decouple import config
 import time
 import json
 # Create your views here.
-GEMINI_API_KEY = config("GEMINI_API_KEY8")
+GEMINI_API_KEY = config("GEMINI_API_KEY9")
 
 class Content_and_Summary(BaseModel):
     """A data structure for storing content and its summary."""
@@ -45,12 +46,10 @@ def get_ai_response(request,novel_id):
         user = novel.created_by
         user_query = request.GET.get('user_query') # User prompt
         chapter_number = novel.novel_chapter.all().count() # total number of chapters belong to this novel
-        if not user_request_eligible(user):
-            return JsonResponse({"error":"You have reached your daily limit for chapter creation requests. Please try again later."},status=400)
-        enhanced_prompt = user_query
-        if is_Premium(user):
-            enhanced_prompt = EnhanceUserPrompt(user_query,novel)
         working_chapter = ChapterBeingCreated.objects.filter(user=user,novel=novel).order_by('-id').first()
+        enhanced_prompt = user_query
+        if is_Premium(user) and user_request_eligible(user):
+            enhanced_prompt = EnhanceUserPrompt(user_query,novel,True if working_chapter else False)
         SYSTEM_PROMPT_FOR_CREATING_NEW_CHAPTER = f"""
                 !!! You just have to create novel , DO NOT write anything uneccesaary like :
                                 I have created this or anything or give me more context Just give answer if not much context given then assume take any famous novel and combine it what few bits of information you have from user
@@ -143,7 +142,67 @@ def get_ai_response(request,novel_id):
                                 I have created this or anything or give me more context Just give answer if not much context given then assume take any famous novel and combine it what few bits of information you have from user
                     SYSTEM: 
 
-                !!!!!! YOU DO NOT HAVE TO CREATE NEW CHAPTER RATHER YOU HAVE TO EDIT THE EXISTING CHAPTER BASED ON THE INSTRUCTIONS GIVEN BELOW !!!!!   
+                !!!!!! YOU WILL BE GIVEN A SHORT SUMMARY OF THE CHAPTER YOU ARE WORKING AND YOU HAVE TO GET THE CONTEXT OF THE CURRENT CHAPTER USER WORKING ON AND HE WANT TO CHANGE SOMETHING IN IT SO YOU CREATE CREATE A NEW CHAPTER WITH CONTAINING THE CONTENT SIMILAR TO THE CHAPTER SUMMARY BUT HAVE TO CREATE A NEW CHAPTER WITH THE INFO THAT USER WANT'S TO CHANGE IN THE CHAPTER!!!
+                You are a professional novelist AI whose single purpose is to produce long-form fiction with exceptional storytelling, broad perspective, and airtight internal logic. Always behave like a senior author/editor who plans novels before writing scenes. Follow these rules for every request unless the user explicitly overrides them:
+
+                        Understand the mission first — before drafting, silently generate (no user-visible commentary) a concise plan that includes: central premise (one sentence), primary theme(s), protagonist arc (beginning → change → end), three major plot beats (inciting incident, midpoint reversal, climax), and two meaningful subplots. Use these to guide all output.
+
+                        Prioritize structure & coherence
+
+
+                        Keep cause→effect logic strict; never introduce events without plausible motivation or setup.
+
+                        Track facts (names, dates, items, rules) and maintain consistency across chapters and scenes.
+
+                        Character-first writing
+
+                        Create vivid protagonists and supporting cast with wants, fears, secrets, and contradictions.
+
+                        Give each major character a clear arc and at least one distinct, recurring behavioral tic or voice marker.
+
+                        Show emotional growth via choices and consequences, not exposition.
+
+                        Broader perspective & thematic depth
+
+                        Weave social, historical, or philosophical context that enriches the story’s stakes without derailing pace.
+
+                        Use subplots to explore themes from different angles and to complicate the protagonist’s goals.
+
+                        No plot holes, no deus ex machina
+
+                        If a resolution relies on new information, that information must be foreshadowed earlier.
+
+                        When asked for surprises or twists, ensure they are surprising yet inevitable in retrospect.
+
+                        Voice, tone, and pacing
+
+                        Match the tone requested by the user (e.g., lyrical, spare, fast-paced, noir).
+
+                        Vary sentence rhythm: lean prose for tension, longer sentences for reflection.
+
+                        Balance scene types: setup, confrontation, aftermath.
+
+                        Show, don’t tell
+
+                        Use sensory detail and concrete imagery to convey emotion and setting.
+
+                        Favor action and dialogue that reveal character over exposition blocks.
+
+                        Practical constraints
+
+                        If the user requests a full chapter/scene, default to ~900–2,000 words unless they specify otherwise.
+
+                        If asked for a short sample, supply a focused scene (1–3 pages) with a clear dramatic question.
+
+                        Revision mode
+
+                        When the user asks “improve,” create at least three alternative rewrites or edits (e.g., stronger opening, tighter pacing, deeper internal conflict), and explain the change briefly.
+
+                        Sensitivity and accuracy
+
+                        Avoid harmful stereotypes, gratuitous violence/sex, or inaccurate depictions of cultures, disabilities, or professions. If content might be sensitive, provide a respectful, realistic portrayal or ask (briefly) for user preference about depiction.
+
+                        Do not invent nontrivial factual claims presented as real-world truth (e.g., historical dates, legal procedures) — either use plausible fictional alternatives or flag uncertainty.
 
                 DATA RELATED TO THE NOVEL TO KEEP THE CONTEXT:
                     # WORLD RULES (do not contradict):
@@ -163,15 +222,16 @@ def get_ai_response(request,novel_id):
                     # - {novel.style_guide}
 
 
-                # CHAPTER CONTENT THAT YOU HAVE TO WORK UPON :
-                    # - {working_chapter.content if working_chapter else ""}
+                # CHAPTER SUMMARY THAT USER CURRENTLY WORKING ON :
+                    # - {working_chapter.chapter_summary if working_chapter else ""}
 
                 # TASK:
                     !!YOU HAVE TO EDIT THE CHAPTER BASED ON THE INSTRUCTIONS BELOW AND MAKE IT IN SUCH A WAY THAT IT COULD FIT IN THE NOVEL FLOW
                         # - {enhanced_prompt}
 
         """ 
-
+        system_prompt = SYSTEM_PROMPT_FOR_EDITING_EXISTING_CHAPTER if working_chapter else SYSTEM_PROMPT_FOR_CREATING_NEW_CHAPTER
+        print(system_prompt)
         def event_stream():
             content = ""
             err = None
@@ -182,7 +242,7 @@ def get_ai_response(request,novel_id):
             try:
                 response = client.models.generate_content_stream(
                     model="gemini-2.5-flash",
-                    contents= SYSTEM_PROMPT_FOR_CREATING_NEW_CHAPTER if not working_chapter else SYSTEM_PROMPT_FOR_EDITING_EXISTING_CHAPTER,)
+                    contents= system_prompt,)
 
                 for chunk in response:
                     
@@ -225,18 +285,4 @@ def get_ai_response(request,novel_id):
         )
 
 
-# This function returns enhanced prompts this function will be used for premium users only
-def EnhanceUserPrompt(prompt,novel):
-    enhanced_prompt = client.models.generate_content(
-                model='gemini-2.5-flash-lite',
-                contents=f"""
-                SYSTEM: You are a prompt Enhance AI your job is the Enhance the given prompt and add more details to make it more interesting since this was prompt is needed for creating novels so make the prompt really good Don't give multiple options just give a single best prompt which uses less tokens and the length of the prompt should be less means the output tokens should not be used much: HERE IS THE PROMPT - {prompt}
-                !! DESCRIPTION ABOUT NOVEL YOU ARE MAKING PROMPT FOR:
-                    Novel summary till now:
-                    {novel.ultra_short_story_till_now}
-                    
-                """,
-                
-            )
-    return enhanced_prompt.text
 
