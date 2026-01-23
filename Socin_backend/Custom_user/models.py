@@ -4,14 +4,32 @@ from phonenumber_field.modelfields import PhoneNumberField
 from django.utils import timezone
 from datetime import timedelta
 
+
+# Custom User Manager with username 
+
+class CustomUserManager(BaseUserManager):
+    def create_user(self, user_id, password=None, **extra_fields):
+        if not user_id:
+            raise ValueError("User ID is required")
+
+        user = self.model(user_id=user_id, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, user_id, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_active", True)
+
+        return self.create_user(user_id, password, **extra_fields)
+
 # Create your models here.
-
-
 
 class CustomNovelUser_Model(AbstractUser):
 
-    user_id = models.CharField(unique=True,blank=True,null=True)    
-    username = models.CharField(max_length=120)
+    user_id = models.CharField(max_length=200,unique=True,blank=True,null=True)    
+    username = models.CharField(max_length=120,blank=True,null=True)
     email = models.EmailField()
     avatar = models.URLField(blank=True)
     bio = models.CharField(max_length=200,blank=True)
@@ -19,8 +37,10 @@ class CustomNovelUser_Model(AbstractUser):
 
     USERNAME_FIELD = 'user_id'
 
+    objects = CustomUserManager()
+
     def __str__(self):
-        return self.username
+        return f"{self.username}"
 
     @property
     def is_premium(self):

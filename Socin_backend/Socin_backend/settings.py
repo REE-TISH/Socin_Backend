@@ -116,20 +116,20 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Database for development
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',   
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',   
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 # Database for Production
 
-# DATABASES = {
-#     'default':dj_database_url.config(
-#         default=config('DATABASE_URL') 
-#     )
-# }
+DATABASES = {
+    'default':dj_database_url.config(
+        default=config('DATABASE_URL') 
+    )
+}
 
 
 CACHES = {

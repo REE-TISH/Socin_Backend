@@ -1,3 +1,22 @@
+#Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+#Virtual environment
 \venv
+
+# environment variabe files
 .env
 *.env
+
+# Database
+db.sqlite3
+
+# Media files
+media/
+
+# IDE-specific files
+.idea/
+.vscode/
