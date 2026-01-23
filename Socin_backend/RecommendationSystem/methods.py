@@ -46,66 +46,69 @@ def delete_all_previous_recommendations(user):
 
 # For generating recommendation based on UserInterest and novel popularity
 def generate_recommendations(user,limit=20):
-    if not UserAction.objects.filter(user=user).exists():
-        return Novel.objects.filter(isPublic=True).order_by('-popularity_score').values_list('pk',flat=True)
+    try:
+        if not UserAction.objects.filter(user=user).exists():
+            return Novel.objects.filter(isPublic=True).order_by('-popularity_score').values_list('pk',flat=True)
+        
+        rec = UserRecommendations.objects.filter(user=user).first()
+        if rec:
+            return rec.novel_ids
+
+        recommendations = []
+
+        UserInterest_topGenre = UserInterest.objects.filter(
+            user=user, genre__isnull=False
+        ).order_by("-score")[:3]
+
+        top_tags = UserInterest.objects.filter(
+            user=user, tag__isnull=False
+        ).order_by("-score")[:5]
+
+        top_genre_list = [g.genre for g in UserInterest_topGenre]
+        print(top_genre_list)
+        top_tags_list = [t.tag for t in top_tags]
+        # 1️⃣ Personalized
+        personalized1 = Novel.objects.filter(
+            genres__in=top_genre_list,
+            isPublic=True
+        ).exclude(
+            useraction__user=user,
+            useraction__action='finish'
+        ).distinct()
+
+        personalized2 = Novel.objects.filter(
+            tags__in=top_tags_list,
+            isPublic = True
+        ).exclude(
+            useraction__user=user,
+            useraction__action ='finish'
+        ).distinct()
+
+        recommendations.extend(personalized1)
+        recommendations.extend(personalized2)
+
+        trending = Novel.objects.exclude(
+            id__in=[n.id for n in recommendations]
+        ).order_by("-popularity_score").filter(isPublic=True)
+        print(trending)
+        recommendations.extend(trending)
+
+        new = Novel.objects.exclude(
+            id__in=[n.id for n in recommendations]
+        ).order_by("-created_at")
+        recommendations.extend(new)
     
-    rec = UserRecommendations.objects.filter(user=user).first()
-    if rec:
+        seen = set()
+        final = []
+        for n in recommendations:
+            if n.id not in seen:
+                seen.add(n.id)
+                final.append(n)
+            if len(final) == limit:
+                break
+
+        print(final)
+        rec = UserRecommendations.objects.create(user=user,novel_ids=[n.id for n in final])
         return rec.novel_ids
-
-    recommendations = []
-
-    UserInterest_topGenre = UserInterest.objects.filter(
-        user=user, genre__isnull=False
-    ).order_by("-score")[:3]
-
-    top_tags = UserInterest.objects.filter(
-        user=user, tag__isnull=False
-    ).order_by("-score")[:5]
-
-    top_genre_list = [g.genre for g in UserInterest_topGenre]
-    print(top_genre_list)
-    top_tags_list = [t.tag for t in top_tags]
-    # 1️⃣ Personalized
-    personalized1 = Novel.objects.filter(
-        genres__in=top_genre_list,
-        isPublic=True
-    ).exclude(
-        useraction__user=user,
-        useraction__action='finish'
-    ).distinct()
-
-    personalized2 = Novel.objects.filter(
-        tags__in=top_tags_list,
-        isPublic = True
-    ).exclude(
-        useraction__user=user,
-        useraction__action ='finish'
-    ).distinct()
-
-    recommendations.extend(personalized1)
-    recommendations.extend(personalized2)
-
-    trending = Novel.objects.exclude(
-        id__in=[n.id for n in recommendations]
-    ).order_by("-popularity_score").filter(isPublic=True)
-    print(trending)
-    recommendations.extend(trending)
-
-    new = Novel.objects.exclude(
-        id__in=[n.id for n in recommendations]
-    ).order_by("-created_at")
-    recommendations.extend(new)
-  
-    seen = set()
-    final = []
-    for n in recommendations:
-        if n.id not in seen:
-            seen.add(n.id)
-            final.append(n)
-        if len(final) == limit:
-            break
-
-    print(final)
-    rec = UserRecommendations.objects.create(user=user,novel_ids=[n.id for n in final])
-    return rec.novel_ids
+    except:
+        return None
