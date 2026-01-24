@@ -46,7 +46,7 @@ def delete_all_previous_recommendations(user):
 
 # For generating recommendation based on UserInterest and novel popularity
 def generate_recommendations(user,limit=20):
-    try:
+
         if not UserAction.objects.filter(user=user).exists():
             return Novel.objects.filter(isPublic=True).order_by('-popularity_score').values_list('pk',flat=True)
         
@@ -110,5 +110,5 @@ def generate_recommendations(user,limit=20):
         print(final)
         rec = UserRecommendations.objects.create(user=user,novel_ids=[n.id for n in final])
         return rec.novel_ids
-    except:
-        return None
+    # except:
+    #     return None
