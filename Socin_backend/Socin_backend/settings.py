@@ -16,7 +16,7 @@ RAZORPAY_KEY = config('RAZORPAY_API_KEY')
 SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG_MODE',default=False,cast=bool)
 
 ALLOWED_HOSTS = ["*"]
 
@@ -115,7 +115,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 # Database for development
-
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.sqlite3',   
@@ -124,7 +123,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # }
 
 # Database for Production
-
 DATABASES = {
     'default':dj_database_url.config(
         default=config('DATABASE_URL') 
