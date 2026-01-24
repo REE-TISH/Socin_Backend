@@ -11,8 +11,10 @@ __pycache__/
 .env
 *.env
 
+
 # Database
 db.sqlite3
+data.json/
 
 # Media files
 media/
