@@ -3,12 +3,25 @@
 from google import genai
 from decouple import config
 
-GEMINI_API_KEY = config("GEMINI_API_KEY7")
+GEMINI_API_KEY1 = config("GEMINI_API_KEY1")
+GEMINI_API_KEY2 = config("GEMINI_API_KEY2")
+GEMINI_API_KEY3 = config("GEMINI_API_KEY3")
+GEMINI_API_KEY4 = config("GEMINI_API_KEY4")
+GEMINI_API_KEY5 = config("GEMINI_API_KEY5")
+GEMINI_API_KEY6 = config("GEMINI_API_KEY6")
+GEMINI_API_KEY7 = config("GEMINI_API_KEY7")
+GEMINI_API_KEY8 = config("GEMINI_API_KEY8")
+GEMINI_API_KEY9 = config("GEMINI_API_KEY9")
 
 
-client = genai.Client(api_key=GEMINI_API_KEY)
 
-def EnhanceUserPrompt(prompt,novel,is_editing=False):
+API_LIST = [GEMINI_API_KEY1,GEMINI_API_KEY2,GEMINI_API_KEY3,GEMINI_API_KEY4,GEMINI_API_KEY5,GEMINI_API_KEY6,GEMINI_API_KEY7,GEMINI_API_KEY8,GEMINI_API_KEY9]
+
+
+
+def EnhanceUserPrompt(prompt:str,novel:str,api_key:str,is_editing:bool=False)->str:
+
+    client = genai.Client(api_key=api_key)
     enhanced_prompt = client.models.generate_content(
                 model='gemini-2.5-flash-lite',
                 contents=f"""
@@ -24,6 +37,8 @@ def EnhanceUserPrompt(prompt,novel,is_editing=False):
                 """,
                 
             )
+    
     return enhanced_prompt.text
+
 
 

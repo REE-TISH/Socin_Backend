@@ -15,6 +15,7 @@ from Custom_user.helpers import increment_user_request_count,user_request_eligib
 from decouple import config
 import time
 import json
+from .helpers import API_LIST
 # Create your views here.
 GEMINI_API_KEY = config("GEMINI_API_KEY9")
 
@@ -24,7 +25,7 @@ class Content_and_Summary(BaseModel):
     summary: str = Field(description="Just give the main points so that you could understand these later or even some keyword for you to understand as you have to read these later without reaching the context window limit")
     ultra_short_summary:str = Field(description="this is the ultra short summary that will be stored for keeping the context of the full story")
 
-client = genai.Client(api_key=GEMINI_API_KEY)
+    
 
 arr = ['message_1','message_2','message_3','message_4','__DONE__']
 
@@ -48,8 +49,23 @@ def get_ai_response(request,novel_id):
         chapter_number = novel.novel_chapter.all().count() # total number of chapters belong to this novel
         working_chapter = ChapterBeingCreated.objects.filter(user=user,novel=novel).order_by('-id').first()
         enhanced_prompt = user_query
+        GEMINI_API_KEY = None
+        for i in API_LIST:
+            try:
+                client = genai.Client(api_key=i)
+                response = client.models.generate_content(
+                    model='gemini-2.5-flash-lite',
+                    contents="generate some content of 50 words to check if this api key is working or not",
+                )
+                if response.text:
+                    GEMINI_API_KEY = i
+                    break
+            except Exception as e:
+                print(f"API key {i} is not working. Error: {e}")
+        print(GEMINI_API_KEY)
+        client = genai.Client(api_key=GEMINI_API_KEY)
         if is_Premium(user) and user_request_eligible(user):
-            enhanced_prompt = EnhanceUserPrompt(user_query,novel,True if working_chapter else False)
+            enhanced_prompt = EnhanceUserPrompt(user_query,novel,GEMINI_API_KEY,True if working_chapter else False)
         SYSTEM_PROMPT_FOR_CREATING_NEW_CHAPTER = f"""
                 !!! You just have to create novel , DO NOT write anything uneccesaary like :
                                 I have created this or anything or give me more context Just give answer if not much context given then assume take any famous novel and combine it what few bits of information you have from user
@@ -231,7 +247,7 @@ def get_ai_response(request,novel_id):
 
         """ 
         system_prompt = SYSTEM_PROMPT_FOR_EDITING_EXISTING_CHAPTER if working_chapter else SYSTEM_PROMPT_FOR_CREATING_NEW_CHAPTER
-        print(system_prompt)
+        
         def event_stream():
             content = ""
             err = None
@@ -283,6 +299,5 @@ def get_ai_response(request,novel_id):
             event_stream(),
             content_type="text/event-stream"
         )
-
 
 
