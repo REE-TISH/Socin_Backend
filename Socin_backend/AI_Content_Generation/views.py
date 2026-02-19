@@ -1,4 +1,4 @@
-from django.http import StreamingHttpResponse
+from django.http import StreamingHttpResponse,HttpRequest
 from celery import shared_task
 from Novel_Content.models import get_chapter_summary,Novel,Chapter
 from google import genai
@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view,permission_classes
 from django.http import HttpResponse,JsonResponse
 from Novel_Content.views import is_Premium
-from .helpers import EnhanceUserPrompt
+from .helpers import EnhanceUserPrompt,is_proper_query
 from .models import ChapterBeingCreated
 from Custom_user.helpers import increment_user_request_count,user_request_eligible
 from decouple import config
@@ -17,19 +17,11 @@ import time
 import json
 from .helpers import API_LIST
 # Create your views here.
-GEMINI_API_KEY = config("GEMINI_API_KEY9")
-
-class Content_and_Summary(BaseModel):
-    """A data structure for storing content and its summary."""
-    chapter_name:str = Field(description="based on the summary give the chapter a suitable name ")
-    summary: str = Field(description="Just give the main points so that you could understand these later or even some keyword for you to understand as you have to read these later without reaching the context window limit")
-    ultra_short_summary:str = Field(description="this is the ultra short summary that will be stored for keeping the context of the full story")
-
-    
 
 arr = ['message_1','message_2','message_3','message_4','__DONE__']
 
-def testing_AI_Response(request):
+# Test view for testing SSE
+def testing_AI_Response(request:HttpRequest)->StreamingHttpResponse:
 
     def event_stream():
         for i in arr:
@@ -41,12 +33,20 @@ def testing_AI_Response(request):
         content_type="text/event-stream")
 
 
+# Data structure for extra chapter content 
+class Content_and_Summary(BaseModel):
+    """A data structure for storing content and its summary."""
+    chapter_name:str = Field(description="based on the summary give the chapter a suitable name ")
+    summary: str = Field(description="Just give the main points so that you could understand these later or even some keyword for you to understand as you have to read these later without reaching the context window limit")
+    ultra_short_summary:str = Field(description="this is the ultra short summary that will be stored for keeping the context of the full story")
 
-def get_ai_response(request,novel_id):
+
+# Main response generating function
+def get_ai_response(request:HttpRequest,novel_id:str)->StreamingHttpResponse:
         novel = get_object_or_404(Novel,id=novel_id) 
         user = novel.created_by
         user_query = request.GET.get('user_query') # User prompt
-        chapter_number = novel.novel_chapter.all().count() # total number of chapters belong to this novel
+        # chapter_number = novel.novel_chapter.all().count() #total number of chapters belong to this novel
         working_chapter = ChapterBeingCreated.objects.filter(user=user,novel=novel).order_by('-id').first()
         enhanced_prompt = user_query
         GEMINI_API_KEY = None
@@ -62,10 +62,12 @@ def get_ai_response(request,novel_id):
                     break
             except Exception as e:
                 print(f"API key {i} is not working. Error: {e}")
-        print(GEMINI_API_KEY)
+        
         client = genai.Client(api_key=GEMINI_API_KEY)
+        
         if is_Premium(user) and user_request_eligible(user):
-            enhanced_prompt = EnhanceUserPrompt(user_query,novel,GEMINI_API_KEY,True if working_chapter else False)
+            response = EnhanceUserPrompt(user_query,novel,GEMINI_API_KEY,True if working_chapter else False)
+
         SYSTEM_PROMPT_FOR_CREATING_NEW_CHAPTER = f"""
                 !!! You just have to create novel , DO NOT write anything uneccesaary like :
                                 I have created this or anything or give me more context Just give answer if not much context given then assume take any famous novel and combine it what few bits of information you have from user
@@ -250,11 +252,14 @@ def get_ai_response(request,novel_id):
         
         def event_stream():
             content = ""
-            err = None
+
             if not user_request_eligible(user):
                 yield f"data: ERROR: Limit reached\n\n"
-                err = "Limit reached"
                 return
+            if not is_proper_query(user_query,novel,GEMINI_API_KEY):
+                yield f"data: ERROR: Improper query. Please rephrase your query.\n\n"
+                return
+            # Stream the generated content
             try:
                 response = client.models.generate_content_stream(
                     model="gemini-2.5-flash",
@@ -269,12 +274,10 @@ def get_ai_response(request,novel_id):
                 yield "data: __DONE__\n\n"
 
             except Exception as e:
-
-                err = e
                 yield f"data: ERROR: {str(e)}\n\n"
                 return 
-
-            print("reach ")
+            
+            # Generate extra chapter content
             chapter_content = client.models.generate_content(
                 model='gemini-2.5-flash-lite',
                 contents=f"SYSTEM: You are an AI novel summarizer expert , Your job is to summarize the given content in as small context as possible with keeping the meaning of that novel chapter so that it could be used for the creation of furthur chapters . HERE IS THE NOVEL CHAPTER THAT YOU HAVE TO WORK UPON: {content}",
