@@ -13,6 +13,7 @@ from .models import ChapterBeingCreated
 from Custom_user.helpers import user_request_eligible
 import time
 from .helpers import API_LIST
+from typing import List,Dict
 
 User = get_user_model() # User model
 
@@ -59,7 +60,7 @@ def get_ai_response(request:HttpRequest,novel_id:str)->StreamingHttpResponse:
         def event_stream():
             enhanced_prompt:str = user_query
             content:str = ""
-            result:dict = is_proper_query(user_query,novel,GEMINI_API_KEY) # Checking if the prompt is related to the story
+            result:Dict[str,object] = is_proper_query(user_query,novel,GEMINI_API_KEY,working_chapter.content if working_chapter else "",is_editing=True if working_chapter else False) # Checking if the prompt is related to the story
             if not user_request_eligible(user):
                 yield f"data: ERROR: Limit reached\n\n"
                 return
