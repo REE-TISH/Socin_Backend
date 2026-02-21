@@ -73,7 +73,7 @@ def Summarize_Chapter_Content(chapter_content:str,api_key:str,novel:Novel,user)-
     
 
 #? Checking proper prompt
-def is_proper_query(query:str,novel:str,api_key:str)->bool:
+def is_proper_query(query:str,novel:str,api_key:str,working_chapter_content:str,is_editing:bool=False)->bool:
     
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(
@@ -89,6 +89,19 @@ def is_proper_query(query:str,novel:str,api_key:str)->bool:
 
             query:"write the next chapter"
             response:"This query is proper because it is related to the story and it is asking for something that is possible in the novel world so this query is related to the story and also it is proper because it is asking for something that is related to the story and also it is asking for something that is possible in the novel world response will be True"
+
+            !!VERY VERY VERY IMPORTANT :
+                is_editing_status:{is_editing}
+                "is_editing_status is True then return True in response for the similar example"
+                        Example for editing True:
+                            query:change the language to SOME_LANGUAGE (changing language or similar)
+                            response:True
+
+                            query:(QUERY GIVEN TO MAKE A REASONABLE CHANGE SOMETHING IN THE WORKING CHAPTER 
+                                working chapter_content Chapter content:{working_chapter_content if is_editing else ""})
+                            response:True
+                 
+                
         """,
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
