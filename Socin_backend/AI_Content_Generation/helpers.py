@@ -1,18 +1,20 @@
 # helpers file for extra function used in this app
 from Novel_Content.models import Novel
+from .models import ChapterBeingCreated
 from pydantic import BaseModel,Field
+from Custom_user.helpers import increment_user_request_count
+from .AI_structured_response import Content_and_Summary , is_Chapter_related_query
 from google import genai
 from decouple import config
 from google.genai import types
 from sarvamai import SarvamAI
 import json
 
-API_KEY= config("SARAVAM_API_KEY")
+API_KEY= config("SARVAM_API")
 
 Client = SarvamAI(
     api_subscription_key=API_KEY,
 )
-
 
 def EnhanceUserPrompt(prompt:str,novel:Novel,is_editing:bool=False)->str:
     # Enhance the user prompt if its a premium user
@@ -40,15 +42,39 @@ def EnhanceUserPrompt(prompt:str,novel:Novel,is_editing:bool=False)->str:
         return prompt
     return enhanced_prompt.choices[0].message.content
 
+#? Summarize and provide chapter name AND add the chapter to the ChapterBeingCreated model
+def Summarize_Chapter_Content(chapter_content:str,api_key:str,novel:Novel,user)->bool:
+    client = genai.Client(api_key=api_key)
+    try:
+        chapter_summarization = client.models.generate_content(
+                model='gemini-2.5-flash-lite',
+                contents=f"SYSTEM: You are an AI novel summarizer expert , Your job is to summarize the given content in as small context as possible with keeping the meaning of that novel chapter so that it could be used for the creation of furthur chapters . HERE IS THE NOVEL CHAPTER THAT YOU HAVE TO WORK UPON: {chapter_content}",
+                config=types.GenerateContentConfig(
+                            response_mime_type="application/json",
+                            response_schema=Content_and_Summary,
+                )
+            )
+        dictionary_chapter_content = json.loads(chapter_summarization.text)
+        increment_user_request_count(user)
+        # Save the Current Chapter User working on in DB
+        ChapterBeingCreated.objects.get_or_create(
+            user=user,
+            novel=novel,
+            content=chapter_content,
+            chapter_name=dictionary_chapter_content['chapter_name'],
+            chapter_summary=dictionary_chapter_content['summary'],
+            ultra_short_summary=dictionary_chapter_content['ultra_short_summary'],
+        )
+    except Exception as e:
+        print("!!!Error in saving and summarizing chapter")
+        return False
+    return True
+        
+    
 
-# Data structure for checking is_proper_query function
-class is_Chapter_related_query(BaseModel):
-    """A data structure for checking user query"""
-    is_chapter_related:bool = Field(description="Whether the query is related to the novel's story or just some useless query")
-
+#? Checking proper prompt
 def is_proper_query(query:str,novel:str,api_key:str)->bool:
-    # This function will check whether the user query is proper or not like it should not contain any abusive words or something like that 
-    # For now we are just going to check the length of the query and if it is less than 5 words then we will consider it as an improper query
+    
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(
         model='gemini-2.5-flash-lite',
@@ -57,12 +83,18 @@ def is_proper_query(query:str,novel:str,api_key:str)->bool:
         {novel.world_rules} World Rules
         {novel.ultra_short_story_till_now} Ultra short summary of the novel till now 
         Check if the query is proper and not abusive or inappropriate. If it is proper return 'True' else return 'False'. Query: {query}
+        For example:
+            query: "Can you write a chapter where the main character goes to the moon?"
+            response: "Sorry the main character can't go beyond the earth because the novel is based on real world and it doesn't have any sci-fi element so this query is not related to the story and also it is not proper because it is asking for something that is not related to the story and also it is asking for something that is not possible in the real world response will be False"
+
+            query:"write the next chapter"
+            response:"This query is proper because it is related to the story and it is asking for something that is possible in the novel world so this query is related to the story and also it is proper because it is asking for something that is related to the story and also it is asking for something that is possible in the novel world response will be True"
         """,
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
             response_schema=is_Chapter_related_query,
     ))
-    return json.loads(response.text)['is_chapter_related']
+    return json.loads(response.text)
 
 
 

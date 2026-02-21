@@ -5,6 +5,7 @@ from .serializers import (
     Novel_Creation_Serializer,
     Chapter_creation_Serializer,
     )
+from django.http import HttpRequest
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import generics,status
 from rest_framework.views import APIView
@@ -67,7 +68,7 @@ class Get_Novel_Data_API_VIEW(generics.RetrieveAPIView):
 # Get the Chapter that User wants to read From given_id
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def getNovelChapter_API_VIEW(request,*args,**kwargs):
+def getNovelChapter_API_VIEW(request:HttpRequest,*args,**kwargs)->Response:
     chapter_no = kwargs['pk']  # Chapter no
     novel_id = kwargs['novel_id']
     related_novel = get_object_or_404(Novel,id=int(novel_id)) # Finds the novel through novel id
@@ -95,7 +96,7 @@ class Create_Novel_API_VIEW(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def post(self,request):
+    def post(self,request:HttpRequest)->Response:
         data = request.data
         user = request.user
         novel_count = Novel.objects.filter(created_by=user).count()
@@ -119,12 +120,13 @@ class Create_Novel_API_VIEW(APIView):
 
 
 # Create chapter 
-# You want to use background workers
+#! If You want to use background workers
 class Create_Chapter_API_VIEW(APIView):
 
     permission_classes = [IsAuthenticated]
 
     def post(self,request,novel_id):
+
         novel = get_object_or_404(Novel,id=novel_id) 
         user_query = request.data['user_query'] # User prompt
         chapter_number = novel.novel_chapter.all().count() # total number of chapters belong to this novel

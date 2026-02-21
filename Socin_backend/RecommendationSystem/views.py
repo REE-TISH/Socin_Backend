@@ -2,6 +2,7 @@ from rest_framework.decorators import api_view,permission_classes
 from rest_framework.permissions import IsAuthenticated
 from Novel_Content.models import Novel,UserLikes_Bookmarks
 from .models import UserAction,UserInterest
+from django.http import HttpRequest
 from rest_framework.response import Response
 from .methods import UpdateUserInterests,delete_view_action_on_finished,Handle_likeOrBookmark,generate_recommendations,delete_all_previous_recommendations
 
@@ -16,7 +17,7 @@ ACTION_WEIGHTS = {
 # Create your views here.
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def Novel_Liked_OR_Bookmarked_API_VIEW(request):
+def Novel_Liked_OR_Bookmarked_API_VIEW(request: HttpRequest)->Response:
     novel_id,action = request.data['novel_id'],request.data['action']
     novel = Novel.objects.get(id=novel_id)
     weight = ACTION_WEIGHTS[action]

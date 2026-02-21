@@ -3,7 +3,8 @@ from Novel_Content.models import Novel,get_chapter_summary
 from .models import ChapterBeingCreated
 
 
-# System prompt for creating or Editing the chapter user working on
+# System prompt for creating or Editing the chapter user working on 
+# USED IN (AI_Content_Generation.views.py)
 def System_prompt_for_eidting_and_creating_chapter(novel:Novel,user_query:str,is_editing:bool,working_chapter:ChapterBeingCreated=None)->str:
     if is_editing:
         SYSTEM_PROMPT_FOR_CREATING_NEW_CHAPTER = f"""
@@ -152,18 +153,6 @@ def System_prompt_for_eidting_and_creating_chapter(novel:Novel,user_query:str,is
 
                         If the user requests a full chapter/scene, default to ~900–2,000 words unless they specify otherwise.
 
-                        If asked for a short sample, supply a focused scene (1–3 pages) with a clear dramatic question.
-
-                        Revision mode
-
-                        When the user asks “improve,” create at least three alternative rewrites or edits (e.g., stronger opening, tighter pacing, deeper internal conflict), and explain the change briefly.
-
-                        Sensitivity and accuracy
-
-                        Avoid harmful stereotypes, gratuitous violence/sex, or inaccurate depictions of cultures, disabilities, or professions. If content might be sensitive, provide a respectful, realistic portrayal or ask (briefly) for user preference about depiction.
-
-                        Do not invent nontrivial factual claims presented as real-world truth (e.g., historical dates, legal procedures) — either use plausible fictional alternatives or flag uncertainty.
-
                 DATA RELATED TO THE NOVEL TO KEEP THE CONTEXT:
                     # WORLD RULES (do not contradict):
                     #   - {novel.world_rules}
@@ -185,6 +174,11 @@ def System_prompt_for_eidting_and_creating_chapter(novel:Novel,user_query:str,is
                 # CHAPTER SUMMARY THAT USER CURRENTLY WORKING ON :
                     # - {working_chapter.chapter_summary if working_chapter else ""}
 
+                (!!!!VERY VERY VERY IMPORTANT)
+                !!For example : 
+                    query:"write the next chapter "(Something similar to this query )
+                    response:"{working_chapter.chapter_summary}"(return the same content that was giving for with making it full editing since you can't write next summary before publishing the current chapter)
+                    
                 # TASK:
                     !!YOU HAVE TO EDIT THE CHAPTER BASED ON THE INSTRUCTIONS BELOW AND MAKE IT IN SUCH A WAY THAT IT COULD FIT IN THE NOVEL FLOW
                         # - {user_query}

@@ -7,7 +7,7 @@ from decouple import config
 import cloudinary.uploader
 User = get_user_model()
 
-def could_user_make_request(user):
+def could_user_make_request(user)->bool:
     if user.is_premium and user.daily_usage.chapter_creation_requests_made < 20:
         return True  # Premium users can make 20 requests per day
     elif not user.is_premium and user.daily_usage.chapter_creation_requests_made < 3:
@@ -20,7 +20,7 @@ def increment_user_request_count(user):
     user.daily_usage.save(update_fields=["chapter_creation_requests_made"])
 
 
-def user_request_eligible(user):
+def user_request_eligible(user)->bool:
     user.daily_usage.reset_if_needed()
     return could_user_make_request(user)
 
@@ -61,7 +61,7 @@ def get_public_id_from_url(url):
     match = re.search(r'/upload/(?:v\d+/)?([^.]+)(?:\.\w{3,4})?$', url)
     if match:
         return match.group(1)
-    return None
+    return 
 
   # Contains cloudinary Config
 cloudinary.config( 
@@ -70,7 +70,8 @@ cloudinary.config(
     api_secret = config("CLOUD_SECRET_KEY") 
 )
 
-def delete_image_by_url(public_id):
+# Delete image in cloudinary by url
+def delete_image_by_url(public_id:str):
     try:
         # Delete the asset
         result = cloudinary.uploader.destroy(

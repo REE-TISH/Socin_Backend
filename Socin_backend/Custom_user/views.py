@@ -1,3 +1,4 @@
+from django.http import HttpRequest
 from google.oauth2 import id_token
 from google.auth.transport import requests
 from django.contrib.auth import get_user_model
@@ -19,7 +20,7 @@ User = get_user_model()
 
 # For direct login through GOOGLE ACCOUNT without setting any password
 class GoogleAuthView(APIView):
-    def post(self, request):
+    def post(self, request:HttpRequest)->Response:
         token = request.data.get("token")
       
         try:
@@ -53,7 +54,7 @@ class GoogleAuthView(APIView):
 # VIEW FOR CREATING USER
 class Create_User_API_VIEW(APIView):
     
-    def post(self,request):
+    def post(self,request:HttpRequest)->Response:
         data = request.data
         serializer = CustomUserCreation_Serializer(data=data,context={'request':request})
         if serializer.is_valid():
@@ -65,7 +66,7 @@ class Create_User_API_VIEW(APIView):
 # API View TO GET PROFILE DATA
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])          # User should be authenticated
-def get_your_profile_data_API_VIEW(request,*args,**kwargs):
+def get_your_profile_data_API_VIEW(request:HttpRequest,*args,**kwargs)->Response:
     user = request.user
     serializer = UserProfileData_Serializer(user)
     return Response(serializer.data,status=status.HTTP_200_OK)
@@ -74,7 +75,7 @@ def get_your_profile_data_API_VIEW(request,*args,**kwargs):
 # Api VIEW TO EDIT USER PROFILE (bio , username)
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
-def edit_user_info_api(request):
+def edit_user_info_api(request:HttpRequest)->Response:
     user = request.user
     data = request.data
     if (list(data.keys()) != ['username', 'bio']):
@@ -90,7 +91,7 @@ def edit_user_info_api(request):
 # EDIT USER AVATAR API VIEW
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
-def change_user_avatar_API_VIEW(request):
+def change_user_avatar_API_VIEW(request:HttpRequest)->Response:
     try:
         user = request.user
         # delete the previous avatar if user have one from the cloudinary media
@@ -108,7 +109,7 @@ def change_user_avatar_API_VIEW(request):
 # SET PASSWORD OR CHANGE PASSWORD API VIEW
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
-def change_password_API_VIEW(request):
+def change_password_API_VIEW(request:HttpRequest)->Response:
     user = request.user
     data = request.data
     if not user.password: # IF NO PASSWORD HAS BEEN SET THEN 
@@ -124,7 +125,7 @@ def change_password_API_VIEW(request):
 # DELETE ACCOUNT API VIEW
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def delete_account_API_VIEW(request):
+def delete_account_API_VIEW(request:HttpRequest)->Response:
     user = request.user
     if user.is_premium:
         sub_id = user.subscription.first().subscription_id # User Sub Id
