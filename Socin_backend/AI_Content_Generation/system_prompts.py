@@ -6,7 +6,7 @@ from .models import ChapterBeingCreated
 # System prompt for creating or Editing the chapter user working on 
 # USED IN (AI_Content_Generation.views.py)
 def System_prompt_for_eidting_and_creating_chapter(novel:Novel,user_query:str,is_editing:bool,working_chapter:ChapterBeingCreated=None)->str:
-    if is_editing:
+    if not is_editing:
         SYSTEM_PROMPT_FOR_CREATING_NEW_CHAPTER = f"""
                 !!! You just have to create novel , DO NOT write anything uneccesaary like :
                                 I have created this or anything or give me more context Just give answer if not much context given then assume take any famous novel and combine it what few bits of information you have from user
@@ -177,7 +177,7 @@ def System_prompt_for_eidting_and_creating_chapter(novel:Novel,user_query:str,is
                 (!!!!VERY VERY VERY IMPORTANT)
                 !!For example : 
                     query:"write the next chapter "(Something similar to this query )
-                    response:"{working_chapter.chapter_summary}"(return the same content that was giving for with making it full editing since you can't write next summary before publishing the current chapter)
+                    response:"{working_chapter.chapter_summary if working_chapter else ""}"(return the same content that was giving for with making it full editing since you can't write next summary before publishing the current chapter)
                     
                 # TASK:
                     !!YOU HAVE TO EDIT THE CHAPTER BASED ON THE INSTRUCTIONS BELOW AND MAKE IT IN SUCH A WAY THAT IT COULD FIT IN THE NOVEL FLOW
