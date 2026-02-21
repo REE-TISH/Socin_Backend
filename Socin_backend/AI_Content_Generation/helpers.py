@@ -16,7 +16,7 @@ Client = SarvamAI(
     api_subscription_key=API_KEY,
 )
 
-def EnhanceUserPrompt(prompt:str,novel:Novel,is_editing:bool=False)->str:
+def EnhanceUserPrompt(prompt:str,novel:Novel,working_chapter,is_editing:bool=False)->str:
     # Enhance the user prompt if its a premium user
     try:
         enhanced_prompt = Client.chat.completions(
@@ -30,7 +30,9 @@ def EnhanceUserPrompt(prompt:str,novel:Novel,is_editing:bool=False)->str:
                     {novel.world_rules} World Rules
                     {novel.style_guide} Writing Style Guide
                     (Is_editing: {is_editing})
-                ### IF THE Is_editing is True THEN THAT MEANS USER WANTS TO EDIT THE WORKING CHAPTER RATHER THAN CREATING A NEW CHAPTER SO MAKE SURE TO ADJUST THE PROMPT ACCORDINGLY DON'T ADD ANYTHING UNNECCESSARY 
+                ### IF THE Is_editing is True then you have to make the prompt based the fact that user is working on the chapter with the following content and user want to make some changes in that chapter so you have to make the prompt in such a way that it could help in making changes in that chapter content and also you have to keep in mind that the user want to make some reasonable changes in that chapter content and you have to make the prompt accordingly :
+                    Chapter content that user is working on :
+                        {working_chapter if working_chapter else ""}
                 """},
                 {"role":"user","content":prompt}
                 ]
@@ -42,9 +44,13 @@ def EnhanceUserPrompt(prompt:str,novel:Novel,is_editing:bool=False)->str:
         return prompt
     return enhanced_prompt.choices[0].message.content
 
-#? Summarize and provide chapter name AND add the chapter to the ChapterBeingCreated model
+#? Summarize and provide chapter name AND STORING the chapter to the ChapterBeingCreated model
 def Summarize_Chapter_Content(chapter_content:str,api_key:str,novel:Novel,user)->bool:
     client = genai.Client(api_key=api_key)
+    if not chapter_content or len(chapter_content)<100:
+        """Chapter content is too short to summarize"""
+        print("Chapter content is too short to summarize")
+        return False
     try:
         chapter_summarization = client.models.generate_content(
                 model='gemini-2.5-flash-lite',
@@ -55,6 +61,7 @@ def Summarize_Chapter_Content(chapter_content:str,api_key:str,novel:Novel,user)-
                 )
             )
         dictionary_chapter_content = json.loads(chapter_summarization.text)
+        print("####CHAPTER SUMMARY AND NAME",dictionary_chapter_content)
         increment_user_request_count(user)
         # Save the Current Chapter User working on in DB
         ChapterBeingCreated.objects.get_or_create(
@@ -73,16 +80,13 @@ def Summarize_Chapter_Content(chapter_content:str,api_key:str,novel:Novel,user)-
     
 
 #? Checking proper prompt
-def is_proper_query(query:str,novel:str,api_key:str,working_chapter_content:str,is_editing:bool=False)->bool:
+def is_proper_query(query:str,api_key:str,working_chapter_content:str,is_editing:bool=False)->bool:
     
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(
         model='gemini-2.5-flash-lite',
         contents=f"""
-        {novel.description} Novel Description
-        {novel.world_rules} World Rules
-        {novel.ultra_short_story_till_now} Ultra short summary of the novel till now 
-        Check if the query is proper and not abusive or inappropriate. If it is proper return 'True' else return 'False'. Query: {query}
+        Check if the query is proper and not inappropriate. If it is proper return 'True' else return 'False'. Query: {query}
         For example:
             query: "Can you write a chapter where the main character goes to the moon?"
             response: "Sorry the main character can't go beyond the earth because the novel is based on real world and it doesn't have any sci-fi element so this query is not related to the story and also it is not proper because it is asking for something that is not related to the story and also it is asking for something that is not possible in the real world response will be False"
@@ -107,6 +111,7 @@ def is_proper_query(query:str,novel:str,api_key:str,working_chapter_content:str,
             response_mime_type="application/json",
             response_schema=is_Chapter_related_query,
     ))
+    print(response.text)
     return json.loads(response.text)
 
 
@@ -138,5 +143,5 @@ GEMINI_API_KEY9 = config("GEMINI_API_KEY9")
 
 
 
-API_LIST = [GEMINI_API_KEY4,GEMINI_API_KEY5,GEMINI_API_KEY6,GEMINI_API_KEY7,GEMINI_API_KEY8,GEMINI_API_KEY9]
+API_LIST = [GEMINI_API_KEY1,GEMINI_API_KEY2,GEMINI_API_KEY3,GEMINI_API_KEY4,GEMINI_API_KEY5,GEMINI_API_KEY6,GEMINI_API_KEY7,GEMINI_API_KEY8,GEMINI_API_KEY9]
 

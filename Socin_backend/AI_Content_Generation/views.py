@@ -60,7 +60,11 @@ def get_ai_response(request:HttpRequest,novel_id:str)->StreamingHttpResponse:
         def event_stream():
             enhanced_prompt:str = user_query
             content:str = ""
-            result:Dict[str,object] = is_proper_query(user_query,novel,GEMINI_API_KEY,working_chapter.content if working_chapter else "",is_editing=True if working_chapter else False) # Checking if the prompt is related to the story
+            result:Dict[str,object] = is_proper_query(
+                user_query,GEMINI_API_KEY,
+                working_chapter.content if working_chapter else "", # Checking if the prompt is related to the story
+                True if working_chapter else False
+            ) 
             if not user_request_eligible(user):
                 yield f"data: ERROR: Limit reached\n\n"
                 return
@@ -70,26 +74,37 @@ def get_ai_response(request:HttpRequest,novel_id:str)->StreamingHttpResponse:
                 yield f"data: __DONE__\n\n"
                 return
             if is_Premium(user):
-                enhanced_prompt = EnhanceUserPrompt(user_query,novel,True if working_chapter else False)
-            system_prompt:str = System_prompt_for_eidting_and_creating_chapter(novel,enhanced_prompt,working_chapter)
-
+                enhanced_prompt = EnhanceUserPrompt(user_query,novel,True if working_chapter else False,working_chapter.content if working_chapter else "") # Enhance the user prompt if its a premium user
+                
+            system_prompt:str = System_prompt_for_eidting_and_creating_chapter(
+                novel,
+                enhanced_prompt,
+                True if working_chapter else False,
+                working_chapter
+            )
+            
             # Stream the generated content
             try:
+                print("####ENHANCED PROMPT",enhanced_prompt)
                 response = client.models.generate_content_stream(
                     model="gemini-2.5-flash",
-                    contents= system_prompt,)
-
+                    contents=[system_prompt],
+                )
+                
                 for chunk in response:
+                    print(chunk.text)
                     if chunk.text:
                         content  += f"{chunk.text}"
                         yield f"data: {chunk.text}\n\n"
 
-                yield "data: __DONE__\n\n"
+                yield "data: __DONE__\n\n"  
 
             except Exception as e:
                 yield f"data: ERROR: {str(e)}\n\n"
+                print("!!!Error in generating content stream:", e)
                 return 
             
+            # Store the working chapter content in DB
             if Summarize_Chapter_Content(content,GEMINI_API_KEY,novel,user):
                 yield f"data: Chapter content saved successfully.\n\n"
             else:
