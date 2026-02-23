@@ -123,13 +123,14 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-# if not DEBUG:
-    # Database for Production
-# DATABASES = {
-#     'default':dj_database_url.config(
-#         default=config('DATABASE_URL') 
-#     )
-# }
+
+if not DEBUG:
+# Database for Production
+    DATABASES = {
+        'default':dj_database_url.config(
+            default=config('DATABASE_URL') 
+        )
+    }
 
 
 CACHES = {
