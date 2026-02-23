@@ -5,7 +5,7 @@ from django.contrib.auth.models import Group
 from .utils import client
 
 # Activates user subscription
-def activate_subscription(user, plan_id):
+def activate_subscription(user, plan_id:str):
     if not user:
         return
     plan = SubscriptionPlan.objects.get(plan_id=plan_id)
@@ -24,7 +24,7 @@ def downgrade_to_free(user):
     user.save()
 
 # If user deleted it account then end it subscription
-def delete_user_subscription(sub_id):
+def delete_user_subscription(sub_id:str):
     options = {
         "cancel_at_cycle_end":0
     }

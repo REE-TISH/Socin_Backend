@@ -1,4 +1,6 @@
 # helpers file for extra function used in this app
+from openai import api_key
+
 from Novel_Content.models import Novel
 from .models import ChapterBeingCreated
 from pydantic import BaseModel,Field
@@ -16,13 +18,37 @@ Client = SarvamAI(
     api_subscription_key=API_KEY,
 )
 
-def EnhanceUserPrompt(prompt:str,novel:Novel,working_chapter,is_editing:bool=False)->str:
+def EnhanceUserPrompt(prompt:str,api_key:str,novel:Novel,working_chapter,is_editing:bool=False)->str:
     # Enhance the user prompt if its a premium user
     try:
-        enhanced_prompt = Client.chat.completions(
+        #------------------SARVAM AI ENHANCEMENT------------------    
+        # enhanced_prompt = Client.chat.completions(
                 
-                messages=[{"role":"system","content":f"""
-                SYSTEM: You are a prompt Enhance AI your job is the Enhance the given prompt and add more details to make it more interesting since this was prompt is needed for creating novels so make the prompt really good Don't give multiple options just give a single best prompt which uses less tokens and the length of the prompt should be less means the output tokens should not be used much: HERE IS THE PROMPT - {prompt}
+        #         messages=[{"role":"system","content":f"""
+        #         SYSTEM: You are a prompt Enhance AI your job is the Enhance the given prompt and add more details to make it more interesting since this was prompt is needed for creating novels so make the prompt really good Don't give multiple options just give a single best prompt which uses less tokens and the length of the prompt should be less means the output tokens should not be used much: HERE IS THE PROMPT - {prompt}
+        #         !! DESCRIPTION ABOUT NOVEL YOU ARE MAKING PROMPT FOR:
+        #             Novel summary till now:
+        #             {novel.ultra_short_story_till_now} IF NO SUMMARY PROVIDED ASSUME THAT THIS THE FIRST CHAPTER
+        #             {novel.description} Novel Description
+        #             {novel.world_rules} World Rules
+        #             {novel.style_guide} Writing Style Guide
+        #             (Is_editing: {is_editing})
+        #         ### IF THE Is_editing is True then you have to make the prompt based the fact that user is working on the chapter with the following content and user want to make some changes in that chapter so you have to make the prompt in such a way that it could help in making changes in that chapter content and also you have to keep in mind that the user want to make some reasonable changes in that chapter content and you have to make the prompt accordingly :
+        #             Chapter content that user is working on :
+        #                 {working_chapter if working_chapter else ""}
+        #         """},
+        #         {"role":"user","content":prompt}
+        #         ]
+        #         ,
+                
+        #     )
+        # ------------------------------------------------------------
+
+            client = genai.Client(api_key=api_key)
+            enhanced_prompt = client.models.generate_content(
+                model='gemini-2.5-flash-lite',
+                contents=f"""
+                     SYSTEM: You are a prompt Enhance AI your job is the Enhance the given prompt and add more details to make it more interesting since this was prompt is needed for creating novels so make the prompt really good Don't give multiple options just give a single best prompt which uses less tokens and the length of the prompt should be less means the output tokens should not be used much: HERE IS THE PROMPT - {prompt}
                 !! DESCRIPTION ABOUT NOVEL YOU ARE MAKING PROMPT FOR:
                     Novel summary till now:
                     {novel.ultra_short_story_till_now} IF NO SUMMARY PROVIDED ASSUME THAT THIS THE FIRST CHAPTER
@@ -32,17 +58,13 @@ def EnhanceUserPrompt(prompt:str,novel:Novel,working_chapter,is_editing:bool=Fal
                     (Is_editing: {is_editing})
                 ### IF THE Is_editing is True then you have to make the prompt based the fact that user is working on the chapter with the following content and user want to make some changes in that chapter so you have to make the prompt in such a way that it could help in making changes in that chapter content and also you have to keep in mind that the user want to make some reasonable changes in that chapter content and you have to make the prompt accordingly :
                     Chapter content that user is working on :
-                        {working_chapter if working_chapter else ""}
-                """},
-                {"role":"user","content":prompt}
-                ]
-                ,
-                
-            )
+                        {working_chapter if working_chapter else ""}    
+                    """)
+            return enhanced_prompt.text
     except Exception as e:
         print("Error in enhancing prompt: ",e)
         return prompt
-    return enhanced_prompt.choices[0].message.content
+    
 
 #? Summarize and provide chapter name AND STORING the chapter to the ChapterBeingCreated model
 def Summarize_Chapter_Content(chapter_content:str,api_key:str,novel:Novel,user)->bool:

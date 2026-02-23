@@ -74,7 +74,7 @@ def get_ai_response(request:HttpRequest,novel_id:str)->StreamingHttpResponse:
                 yield f"data: __DONE__\n\n"
                 return
             if is_Premium(user):
-                enhanced_prompt = EnhanceUserPrompt(user_query,novel,True if working_chapter else False,working_chapter.content if working_chapter else "") # Enhance the user prompt if its a premium user
+                enhanced_prompt = EnhanceUserPrompt(user_query,GEMINI_API_KEY,novel,True if working_chapter else False,working_chapter.content if working_chapter else "") # Enhance the user prompt if its a premium user
                 
             system_prompt:str = System_prompt_for_eidting_and_creating_chapter(
                 novel,
@@ -85,14 +85,33 @@ def get_ai_response(request:HttpRequest,novel_id:str)->StreamingHttpResponse:
             
             # Stream the generated content
             try:
-                print("####ENHANCED PROMPT",enhanced_prompt)
                 response = client.models.generate_content_stream(
                     model="gemini-2.5-flash",
-                    contents=[system_prompt],
+                    contents=system_prompt,
+                    config=types.GenerateContentConfig(
+                            # Commands for not blocking the content because of safety setting as this is fictional content
+                            safety_settings=[
+                                types.SafetySetting(
+                                    category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                                    threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                                ),
+                                types.SafetySetting(
+                                    category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                                    threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                                ),
+                                types.SafetySetting(
+                                    category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                                    threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                                ),
+                                types.SafetySetting(
+                                    category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                                    threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                                ),
+                            ]
+                    )
                 )
-                
+     
                 for chunk in response:
-                    print(chunk.text)
                     if chunk.text:
                         content  += f"{chunk.text}"
                         yield f"data: {chunk.text}\n\n"
@@ -100,7 +119,8 @@ def get_ai_response(request:HttpRequest,novel_id:str)->StreamingHttpResponse:
                 yield "data: __DONE__\n\n"  
 
             except Exception as e:
-                yield f"data: ERROR: {str(e)}\n\n"
+                yield f"data: ERROR: There was an error generating the content stream.\n\n"
+                yield f"data: __DONE__\n\n"
                 print("!!!Error in generating content stream:", e)
                 return 
             

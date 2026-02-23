@@ -125,7 +125,7 @@ class Create_Chapter_API_VIEW(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def post(self,request,novel_id):
+    def post(self,request:HttpRequest,novel_id:str)->Response:
 
         novel = get_object_or_404(Novel,id=novel_id) 
         user_query = request.data['user_query'] # User prompt
@@ -155,7 +155,7 @@ class Publish_Chapter_API_VIEW(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def post(self,request,novel_id):
+    def post(self,request:HttpRequest,novel_id:str)->Response:
         novel = get_object_or_404(Novel,id=novel_id) 
         chapter_no = novel.novel_chapter.all().count() # total number of chapters belong to this novel
         if request.user != novel.created_by:
@@ -178,7 +178,7 @@ class Publish_Chapter_API_VIEW(APIView):
 # If the User has chapter that he is working on but hasn't published yet and want to customize the chapter content
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def Chapter_User_WorkingOn(request,novel_id):
+def Chapter_User_WorkingOn(request:HttpRequest,novel_id:str)->Response:
     novel = get_object_or_404(Novel,id=novel_id) 
     user = request.user
     if user != novel.created_by: # If the user who sent request is not the same as the creator of the novel
