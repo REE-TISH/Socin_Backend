@@ -33,19 +33,24 @@ class All_Novels_API_VIEW(generics.ListAPIView):
     serializer_class = Novels_Serializer
     pagination_class = PageNumberPagination
 
-    def get_queryset(self):
-        user = self.request.user
-        novel_ids = generate_recommendations(user)
-        if not novel_ids:
-            return Novel.objects.filter(isPublic=True).order_by('-popularity_score')  
-        preserved_order = Case(
-        *[When(id=pk, then=pos) for pos, pk in enumerate(novel_ids)]
-        )
 
-        return Novel.objects.filter(
-            id__in=novel_ids,
-            isPublic=True
-        ).order_by(preserved_order)
+#!---- USE THIS METHOD FOR A BETTER SERVER AND MORE DATA
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     novel_ids = generate_recommendations(user)
+    #     if not novel_ids:
+    #         return Novel.objects.filter(isPublic=True).order_by('-popularity_score')  
+    #     preserved_order = Case(
+    #     *[When(id=pk, then=pos) for pos, pk in enumerate(novel_ids)]
+    #     )
+
+    #     return Novel.objects.filter(
+    #         id__in=novel_ids,
+    #         isPublic=True
+    #     ).order_by(preserved_order)
+
+    def get_queryset(self):
+        return Novel.objects.filter(isPublic=True).order_by('-popularity_score') 
 
     def get_paginated_response(self, data):
         response = super().get_paginated_response(data)
