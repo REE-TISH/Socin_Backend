@@ -143,7 +143,8 @@ class Delete_Novel_API_VIEW(APIView):
         novel = get_object_or_404(Novel,id=novel_id)
         if request.user != novel.created_by:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
-        novel.delete()
+        novel.created_by = None # Set the created_by field to null before deleting the novel
+        novel.save()
         return Response({"message":"Novel Deleted Successfully"},status=status.HTTP_200_OK)
 
 # Create chapter 
