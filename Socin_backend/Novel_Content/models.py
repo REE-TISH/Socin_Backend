@@ -18,7 +18,7 @@ class Tag(models.Model):        # Give little bit context about the story
 
 class Novel(models.Model):
     name = models.CharField(max_length=200)
-    created_by = models.ForeignKey(User,on_delete=models.CASCADE,related_name="created_by")
+    created_by = models.ForeignKey(User,on_delete=models.SET_NULL,blank=True,null=True,related_name="created_by")
     created_at = models.DateField(auto_now_add=True)
     description = models.TextField(blank=True)
     genres = models.ManyToManyField(Genre)

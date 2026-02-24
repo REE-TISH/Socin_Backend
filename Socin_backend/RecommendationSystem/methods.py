@@ -45,6 +45,7 @@ def delete_all_previous_recommendations(user):
         rec.delete()
 
 # For generating recommendation based on UserInterest and novel popularity
+#!---NOT USING THIS METHOD RIGHT NOW -----(Only recommending novels based on popularity)
 def generate_recommendations(user,limit=20):
 
         if not UserAction.objects.filter(user=user).exists():

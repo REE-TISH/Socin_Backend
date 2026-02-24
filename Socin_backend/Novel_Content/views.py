@@ -123,6 +123,28 @@ class Create_Novel_API_VIEW(APIView):
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
 
+# Change the visiibility of the novel that user created from public to private and vice versa
+class Change_Novel_Visibility_API_VIEW(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request:HttpRequest,novel_id:str)->Response:
+        novel = get_object_or_404(Novel,id=novel_id)
+        if request.user != novel.created_by:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        novel.isPublic = not novel.isPublic # Toggle the visibility
+        novel.save()
+        return Response({"message":"Novel visibility changed"},status=status.HTTP_200_OK)
+
+# Delete the Novel that user created
+class Delete_Novel_API_VIEW(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self,request:HttpRequest,novel_id:str)->Response:
+        novel = get_object_or_404(Novel,id=novel_id)
+        if request.user != novel.created_by:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        novel.delete()
+        return Response({"message":"Novel Deleted Successfully"},status=status.HTTP_200_OK)
 
 # Create chapter 
 #! If You want to use background workers
