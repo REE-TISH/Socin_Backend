@@ -69,6 +69,13 @@ class Get_Novel_Data_API_VIEW(generics.RetrieveAPIView):
     serializer_class = Novel_Serializer
     lookup_field = 'pk'
 
+    # Check whether the novel belong to the viewing user or not
+    def get_queryset(self):
+        novel_id = self.kwargs['pk']
+        novel = Novel.objects.filter(id=novel_id).first()
+        if novel and (novel.isPublic or self.request.user == novel.created_by):
+            return Novel.objects.filter(id=novel_id)
+        return Novel.objects.none()  # Return an empty queryset if the novel is not public and the user is not the creator
 
 # Get the Chapter that User wants to read From given_id
 @api_view(['GET'])
