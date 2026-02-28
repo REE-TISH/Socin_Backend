@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Novel,Chapter,Tag,Genre
 from django.contrib.auth import get_user_model
 from RecommendationSystem.models import UserAction
+from Novel_Content.models import UserLikes_Bookmarks
 
 # User 
 User = get_user_model()
@@ -34,11 +35,11 @@ class Novel_Serializer(serializers.ModelSerializer):
     
     def get_is_liked(self,obj):
         user = self.context['request'].user
-        is_liked = UserAction.objects.filter(user=user,novel=obj,action='like').exists()
+        is_liked = UserLikes_Bookmarks.objects.filter(user=user,novel=obj,action='like').exists()
         return is_liked
     def get_is_bookmarked(self,obj):
         user = self.context['request'].user
-        is_bookmarked = UserAction.objects.filter(user=user,novel=obj,action='bookmark').exists()
+        is_bookmarked = UserLikes_Bookmarks.objects.filter(user=user,novel=obj,action='bookmark').exists()
         return is_bookmarked    
 
 # To serialize all the novels data for showing all the novels available

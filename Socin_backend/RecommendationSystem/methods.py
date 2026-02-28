@@ -28,9 +28,10 @@ def UpdateUserInterests(novel,request,weight,action,is_created):
 
 def Handle_likeOrBookmark(novel,user,action,is_created):
     if is_created:
+        print("hello")
         UserLikes_Bookmarks.objects.get_or_create(novel=novel,user=user,action=action)
     if not is_created:
-        UserLikes_Bookmarks.objects.delete(novel=novel,user=user,action=action)
+        UserLikes_Bookmarks.objects.filter(novel=novel,user=user,action=action).delete()
 
 # When a user finished the novel the delete the view action of that user
 def delete_view_action_on_finished(user,novel):

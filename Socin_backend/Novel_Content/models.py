@@ -50,6 +50,9 @@ class UserLikes_Bookmarks(models.Model):
     action = models.CharField(max_length=30,choices=ACTION_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"{self.user} {self.action} {self.novel.name}"
+
 class Chapter(models.Model):
     related_novel = models.ForeignKey(Novel,on_delete=models.CASCADE,related_name="novel_chapter")
     name = models.CharField(max_length=200,blank=True)

@@ -23,9 +23,11 @@ def Novel_Liked_OR_Bookmarked_API_VIEW(request: HttpRequest)->Response:
     weight = ACTION_WEIGHTS[action]
     user_action,is_created = UserAction.objects.get_or_create(user=request.user,novel=novel,action=action,weight=weight)
     if action == 'like' or action == 'bookmark':
-        delete_all_previous_recommendations(user=request.user)
-        generate_recommendations(user=request.user)
-        # Handle_likeOrBookmark(novel=novel,user=request.user,action=action,is_created=is_created)
+        Handle_likeOrBookmark(novel=novel,user=request.user,action=action,is_created=is_created) 
+        #!<----- WILL USE THESE METHODS IN FUTURE FOR RECOMMENDATION SYSTEM ------>
+        # delete_all_previous_recommendations(user=request.user) <---- Not using this method right now 
+        # generate_recommendations(user=request.user) <---- Not using this method right now
+        
     if not is_created and (action == 'like' or action == 'bookmark'):
         user_action.delete()
         if(action == 'like'):
