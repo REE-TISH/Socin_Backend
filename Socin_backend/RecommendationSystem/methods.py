@@ -1,8 +1,9 @@
+from django.http import HttpRequest
 from .models import UserInterest,UserAction,UserRecommendations
 from Novel_Content.models import Novel,UserLikes_Bookmarks
 
 # Update User interest whenever an Action is done by user
-def UpdateUserInterests(novel,request,weight,action,is_created):
+def UpdateUserInterests(novel:Novel,request:HttpRequest,weight:float,action:str,is_created:bool):
     for genre in novel.genres.all(): # Add genre from the novel on which the user has done Action
         obj,_ = UserInterest.objects.get_or_create(
             user=request.user,genre=genre
@@ -26,7 +27,7 @@ def UpdateUserInterests(novel,request,weight,action,is_created):
     novel.save()
 
 
-def Handle_likeOrBookmark(novel,user,action,is_created):
+def Handle_likeOrBookmark(novel:Novel,user,action:str,is_created:bool):
     if is_created:
         print("hello")
         UserLikes_Bookmarks.objects.get_or_create(novel=novel,user=user,action=action)
@@ -34,7 +35,7 @@ def Handle_likeOrBookmark(novel,user,action,is_created):
         UserLikes_Bookmarks.objects.filter(novel=novel,user=user,action=action).delete()
 
 # When a user finished the novel the delete the view action of that user
-def delete_view_action_on_finished(user,novel):
+def delete_view_action_on_finished(user,novel:Novel):
     view_action = UserAction.objects.filter(user=user,novel=novel,action='view')
     if view_action.exists():
         view_action.delete()

@@ -1,3 +1,4 @@
+from django.http import HttpRequest
 from rest_framework.views import APIView
 from .serializer import UserSubscriptionSerializer,SubscriptionPlanSerializer
 from .models import SubscriptionPlan,Usersubscription
@@ -13,7 +14,7 @@ RAZORPAY_API_KEY = settings.RAZORPAY_KEY
 
 class GetSubscription_API_VIEW(APIView):
     permission_classes = [IsAuthenticated]
-    def post(self,request):
+    def post(self,request:HttpRequest)->Response:
         user = request.user # Assign User to the Passed data
         plan_id = request.data['plan_id']
         try:
