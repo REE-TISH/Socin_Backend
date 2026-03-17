@@ -71,8 +71,11 @@ class Get_Novel_Data_API_VIEW(generics.RetrieveAPIView):
 
     # Check whether the novel belong to the viewing user or not
     def get_queryset(self):
+        print("LJFFKLDJFKLDSJFLKDSJ")
         novel_id = self.kwargs['pk']
         novel = Novel.objects.filter(id=novel_id).first()
+        print(novel)
+        return []
         if novel and (novel.isPublic or self.request.user == novel.created_by):
             return Novel.objects.filter(id=novel_id)
         return Novel.objects.none()  # Return an empty queryset if the novel is not public and the user is not the creator

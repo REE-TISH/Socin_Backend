@@ -1,24 +1,68 @@
-#Python
+# =========================
+# Python / Django .gitignore
+# =========================
+
+# --- Python bytecode / caches ---
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.pytype/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.hypothesis/
+.tox/
+nosetests.xml
+test-results/
 
-#Virtual environment
-\venv
+# --- Packaging / build artifacts ---
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
 
-# environment variabe files
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+.env/
+ENV/
+VENV/
+
+# --- Environment / secrets ---
 .env
 *.env
+.env.*
+*.local
+*.secret
+secrets*.json
 
-
-# Database
+# --- Django specific ---
+*.log
+local_settings.py
 db.sqlite3
+*.sqlite3
+*.sqlite3-journal
 data.json
+celerybeat-schedule
 
-# Media files
+# If you use Django's collected static root, keep source static tracked
+staticfiles/
+static_root/
+
+# User uploads
 media/
 
-# IDE-specific files
+# --- IDE / OS ---
 .idea/
 .vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Node (if present in project) ---
+node_modules/
